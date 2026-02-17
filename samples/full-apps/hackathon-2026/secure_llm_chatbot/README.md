@@ -13,11 +13,11 @@ https://www.youtube.com/watch?v=DcSQH0ZOf3E
 1) Copy env template:
 
 ```bash
-cp .env.example backend/.env
+cp backend/.env.example backend/.env
 ```
 
 2) Configure at least one LLM provider in `backend/.env`:
-- Uncomment one provider block in `.env.example`
+- Uncomment one provider block in `backend/.env.example`
 - Fill required API credentials for that provider
 
 3) Run:
@@ -63,7 +63,7 @@ secure_llm_chatbot/
 Quick start:
 
 ```bash
-cp .env.example backend/.env
+cp backend/.env.example backend/.env
 ```
 
 Then open `backend/.env`, uncomment one provider block, and fill required values.
@@ -81,7 +81,7 @@ Start the app:
 ./run.sh
 ```
 
-With zero configured providers, startup fails early with guidance and points to `.env.example`.
+With zero configured providers, startup fails early with guidance and points to `backend/.env.example`.
 
 ## More docs
 

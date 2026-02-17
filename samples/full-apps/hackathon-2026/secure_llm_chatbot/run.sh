@@ -65,6 +65,35 @@ port_in_use() {
   return 1
 }
 
+wait_for_protegrity_services() {
+  local classification_url="http://localhost:8580/pty/data-discovery/v1.1/classify"
+  local guardrail_url="http://localhost:8581/pty/semantic-guardrail/v1.1/conversations/messages/scan"
+  local max_attempts=30
+  local attempt=1
+
+  echo "Waiting for Protegrity services to become ready..."
+  while (( attempt <= max_attempts )); do
+    if curl -sS -m 3 -o /dev/null -w "%{http_code}" \
+      "$classification_url?score_threshold=0.6" \
+      -H 'Content-Type: text/plain' \
+      -d 'health check' | grep -q '^200$' \
+      && curl -sS -m 3 -o /dev/null -w "%{http_code}" \
+      "$guardrail_url" \
+      -H 'Content-Type: application/json' \
+      -d '{"messages":[{"from":"user","to":"ai","content":"health check","processors":["customer-support"]}]}' | grep -q '^200$'; then
+      echo "Protegrity services are ready."
+      return 0
+    fi
+
+    echo "  Attempt $attempt/$max_attempts: services not ready yet; retrying in 2s..."
+    sleep 2
+    ((attempt++))
+  done
+
+  echo "Error: Protegrity services did not become ready in time."
+  return 1
+}
+
 trap cleanup EXIT INT TERM
 
 if ! command -v docker >/dev/null 2>&1; then
@@ -100,6 +129,10 @@ if ! (cd "$REPO_ROOT" && docker compose up -d); then
   exit 1
 fi
 
+if ! wait_for_protegrity_services; then
+  exit 1
+fi
+
 PYTHON_BIN="python3"
 if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
   echo "Error: python3 is not installed or not in PATH."
@@ -116,7 +149,7 @@ echo "Installing backend dependencies..."
 
 if [[ ! -f "$ENV_FILE" ]]; then
   echo "Error: missing backend environment file: $ENV_FILE"
-  echo "Create it first by running: cp .env.example backend/.env"
+  echo "Create it first by running: cp backend/.env.example backend/.env"
   echo "Then fill required values and rerun ./run.sh"
   exit 1
 fi
@@ -133,7 +166,7 @@ PY
 ); then
   echo ""
   echo "LLM provider validation failed."
-  echo "Configure at least one provider in backend/.env (copied from .env.example) and rerun ./run.sh"
+  echo "Configure at least one provider in backend/.env (copied from backend/.env.example) and rerun ./run.sh"
   exit 1
 fi
 
@@ -147,16 +180,40 @@ echo "Syncing enabled LLM models from backend/.env ..."
 (
   cd "$BACKEND_DIR"
   "$SAMPLE_DIR/.venv/bin/python" manage.py shell <<'PY'
+import os
 from apps.core.llm_config import validate_llm_provider_configuration
 from apps.core.models import LLMProvider
 
 enabled = sorted(validate_llm_provider_configuration())
 
-# Enable models for configured providers and disable the rest.
-LLMProvider.objects.filter(provider_type__in=enabled).update(is_active=True)
-LLMProvider.objects.exclude(provider_type__in=enabled).update(is_active=False)
+# Optional strict filter for Azure deployment names.
+# Example: AZURE_OPENAI_DEPLOYMENTS=gpt-4o,gpt-35-turbo-chat
+raw_azure_deployments = os.getenv("AZURE_OPENAI_DEPLOYMENTS", "").strip()
+azure_deployments = {
+  item.strip()
+  for item in raw_azure_deployments.split(",")
+  if item.strip()
+}
+
+# Start from a clean slate and explicitly enable what's allowed.
+LLMProvider.objects.update(is_active=False)
+
+# Enable non-Azure providers fully when configured.
+for provider in enabled:
+  if provider == "azure":
+    continue
+  LLMProvider.objects.filter(provider_type=provider).update(is_active=True)
+
+# Enable Azure models.
+if "azure" in enabled:
+  azure_qs = LLMProvider.objects.filter(provider_type="azure")
+  if azure_deployments:
+    azure_qs = azure_qs.filter(model_identifier__in=azure_deployments)
+  azure_qs.update(is_active=True)
 
 print("Enabled provider types:", ", ".join(enabled))
+if "azure" in enabled and azure_deployments:
+  print("Enabled Azure deployments:", ", ".join(sorted(azure_deployments)))
 print("Active models:", list(LLMProvider.objects.filter(is_active=True).values_list("id", flat=True)))
 PY
 )

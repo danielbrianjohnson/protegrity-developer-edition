@@ -31,11 +31,29 @@ class ProtegrityService:
         
         # Data Discovery API configuration
         self.classification_url = "http://localhost:8580/pty/data-discovery/v1.1/classify"
-        self.classification_threshold = 0.6
+        self.classification_threshold_input = self._get_float_env(
+            "PROTEGRITY_CLASSIFICATION_THRESHOLD_INPUT",
+            "PROTEGRITY_CLASSIFICATION_THRESHOLD",
+            default=0.6,
+        )
+        self.classification_threshold_output = self._get_float_env(
+            "PROTEGRITY_CLASSIFICATION_THRESHOLD_OUTPUT",
+            "PROTEGRITY_CLASSIFICATION_THRESHOLD",
+            default=0.6,
+        )
         
         # Semantic Guardrail configuration
         self.guardrails_url = "http://localhost:8581/pty/semantic-guardrail/v1.1/conversations/messages/scan"
-        self.guardrail_threshold = float(os.getenv("PROTEGRITY_GUARDRAIL_THRESHOLD", "0.8"))
+        self.guardrail_threshold_input = self._get_float_env(
+            "PROTEGRITY_GUARDRAIL_THRESHOLD_INPUT",
+            "PROTEGRITY_GUARDRAIL_THRESHOLD",
+            default=0.8,
+        )
+        self.guardrail_threshold_output = self._get_float_env(
+            "PROTEGRITY_GUARDRAIL_THRESHOLD_OUTPUT",
+            "PROTEGRITY_GUARDRAIL_THRESHOLD",
+            default=0.8,
+        )
         
         # Entity mappings for redaction
         self.entity_map = {
@@ -59,6 +77,28 @@ class ProtegrityService:
         }
         
         self.masking_char = "#"
+
+    def _get_float_env(self, primary_name: str, legacy_name: str, default: float) -> float:
+        """Read a float from env with legacy fallback and safe default."""
+        raw = os.getenv(primary_name)
+        source_name = primary_name
+        if raw is None or raw == "":
+            raw = os.getenv(legacy_name)
+            source_name = legacy_name
+
+        if raw is None or raw == "":
+            return default
+
+        try:
+            return float(raw)
+        except (TypeError, ValueError):
+            logger.warning(
+                "Invalid float value for %s=%r. Falling back to default %s",
+                source_name,
+                raw,
+                default,
+            )
+            return default
     
     def check_guardrails(self, text: str, message_direction: str = "user_to_ai") -> Dict[str, Any]:
         """
@@ -111,12 +151,19 @@ class ProtegrityService:
                 if "messages" in result and len(result["messages"]) > 0:
                     message_risk = result["messages"][0].get("score", 0.0)
                 
-                # Determine outcome based on risk threshold (configurable via env var)
-                outcome = "rejected" if message_risk > self.guardrail_threshold else "accepted"
+                risk_threshold = (
+                    self.guardrail_threshold_input
+                    if message_direction == "user_to_ai"
+                    else self.guardrail_threshold_output
+                )
+
+                # Determine outcome based on direction-specific risk threshold (configurable via env var)
+                outcome = "rejected" if message_risk > risk_threshold else "accepted"
                 
                 return {
                     "outcome": outcome,
                     "risk_score": message_risk,
+                    "threshold": risk_threshold,
                     "policy_signals": [],  # Can extract from semantic analysis
                     "details": result
                 }
@@ -138,7 +185,7 @@ class ProtegrityService:
                 "details": {"error": str(e)}
             }
     
-    def discover_entities(self, text: str) -> Dict[str, List[Dict[str, Any]]]:
+    def discover_entities(self, text: str, score_threshold: Optional[float] = None) -> Dict[str, List[Dict[str, Any]]]:
         """
         Step 2: Discover PII and sensitive entities in the text.
         
@@ -161,7 +208,8 @@ class ProtegrityService:
         """
         try:
             headers = {"Content-Type": "text/plain"}
-            params = {"score_threshold": self.classification_threshold}
+            threshold = self.classification_threshold_input if score_threshold is None else score_threshold
+            params = {"score_threshold": threshold}
             
             response = requests.post(
                 self.classification_url,
@@ -218,7 +266,7 @@ class ProtegrityService:
         logger.warning("Tokenization not available in Developer Edition. Using redaction instead.")
         return self.redact_data(text)
     
-    def redact_data(self, text: str) -> Tuple[str, Dict[str, Any]]:
+    def redact_data(self, text: str, score_threshold: Optional[float] = None) -> Tuple[str, Dict[str, Any]]:
         """
         Step 5: Redact sensitive data by replacing with entity labels.
         
@@ -234,7 +282,7 @@ class ProtegrityService:
         """
         try:
             # Discover entities first
-            entities = self.discover_entities(text)
+            entities = self.discover_entities(text, score_threshold=score_threshold)
             
             if not entities:
                 return text, {"success": True, "method": "redact", "entities_found": 0}
@@ -320,7 +368,7 @@ class ProtegrityService:
         
         # Step 2: Discover entities
         logger.info("Step 2: Discovering entities...")
-        discovery = self.discover_entities(text)
+        discovery = self.discover_entities(text, score_threshold=self.classification_threshold_input)
         result["discovery"] = discovery
         
         # Step 3 & 5: Process based on mode
@@ -332,7 +380,10 @@ class ProtegrityService:
                 result["processed_text"] = protected_text
         elif mode == "redact":
             logger.info("Step 5: Redacting data...")
-            redacted_text, redaction_meta = self.redact_data(text)
+            redacted_text, redaction_meta = self.redact_data(
+                text,
+                score_threshold=self.classification_threshold_input,
+            )
             result["redaction"] = redaction_meta
             result["processed_text"] = redacted_text
         
@@ -378,11 +429,17 @@ class ProtegrityService:
             logger.warning("LLM response rejected by guardrails")
         
         # Discover entities in response
-        discovery = self.discover_entities(response_text)
+        discovery = self.discover_entities(
+            response_text,
+            score_threshold=self.classification_threshold_output,
+        )
         result["discovery"] = discovery
         
         # Redact any PII that leaked into response
-        redacted_response, redaction_meta = self.redact_data(response_text)
+        redacted_response, redaction_meta = self.redact_data(
+            response_text,
+            score_threshold=self.classification_threshold_output,
+        )
         result["redaction"] = redaction_meta
         result["processed_response"] = redacted_response
         

@@ -124,7 +124,7 @@ def validate_llm_provider_configuration() -> Set[str]:
         raise ImproperlyConfigured(
             "ENABLED_LLM_PROVIDERS is set but no valid providers were recognized. "
             "Use provider names like: openai,azure_openai,anthropic,bedrock. "
-            "See .env.example and configure backend/.env."
+            "See backend/.env.example and configure backend/.env."
         )
 
     if raw_enabled:
@@ -137,14 +137,14 @@ def validate_llm_provider_configuration() -> Set[str]:
             )
             raise ImproperlyConfigured(
                 "Invalid LLM provider configuration. "
-                f"{details}. See .env.example and configure backend/.env."
+                f"{details}. See backend/.env.example and configure backend/.env."
             )
 
     if not enabled:
         raise ImproperlyConfigured(
             "No LLM provider is configured. Configure at least one provider in backend/.env "
             "(for example Azure OpenAI, OpenAI, Anthropic, or Bedrock) and re-run. "
-            "See .env.example for vendor-neutral templates."
+            "See backend/.env.example for vendor-neutral templates."
         )
 
     return enabled
