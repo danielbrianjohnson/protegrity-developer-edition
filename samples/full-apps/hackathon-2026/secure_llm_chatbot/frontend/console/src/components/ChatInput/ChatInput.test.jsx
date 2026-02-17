@@ -8,10 +8,10 @@ describe('ChatInput Component', () => {
     onSend: vi.fn(),
     isLoading: false,
     placeholder: 'Type a message...',
-    selectedModel: { id: 'fin', name: 'Fin AI' },
+    selectedModel: { id: 'azure-gpt-4o', name: 'GPT-4o (Azure)' },
     onModelChange: vi.fn(),
     availableModels: [
-      { id: 'fin', name: 'Fin AI', description: 'Intercom Fin' },
+      { id: 'azure-gpt-4o', name: 'GPT-4o (Azure)', description: 'Azure OpenAI GPT-4o' },
       { id: 'bedrock', name: 'Claude', description: 'Amazon Bedrock' }
     ]
   };
@@ -133,7 +133,7 @@ describe('ChatInput Component', () => {
     await user.click(menuButton);
 
     // Menu should be visible
-    expect(screen.getByText('Fin AI')).toBeInTheDocument();
+    expect(screen.getByText('GPT-4o (Azure)')).toBeInTheDocument();
     expect(screen.getByText('Claude')).toBeInTheDocument();
   });
 
@@ -149,7 +149,7 @@ describe('ChatInput Component', () => {
     // Open menu
     const menuButton = screen.getByRole('button', { name: /models & agents/i });
     await user.click(menuButton);
-    expect(screen.getByText('Fin AI')).toBeInTheDocument();
+    expect(screen.getByText('GPT-4o (Azure)')).toBeInTheDocument();
 
     // Click outside
     const outside = screen.getByTestId('outside');
@@ -157,7 +157,7 @@ describe('ChatInput Component', () => {
 
     // Menu should close
     await waitFor(() => {
-      expect(screen.queryByText('Intercom Fin')).not.toBeInTheDocument();
+      expect(screen.queryByText('Azure OpenAI GPT-4o')).not.toBeInTheDocument();
     });
   });
 
@@ -212,7 +212,7 @@ describe('ChatInput Component', () => {
     await userEvent.click(menuButton);
 
     // Should show current selection
-    const finModel = screen.getByText('Fin AI');
-    expect(finModel).toBeInTheDocument();
+    const model = screen.getByText('GPT-4o (Azure)');
+    expect(model).toBeInTheDocument();
   });
 });

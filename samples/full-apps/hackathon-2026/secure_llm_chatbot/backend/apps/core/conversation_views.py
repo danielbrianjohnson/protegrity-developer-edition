@@ -55,7 +55,7 @@ def conversation_list_create(request):
         {
           "id": "uuid",
           "title": "Chat title",
-          "model_id": "fin",
+                    "model_id": "azure-gpt-4o",
           "message_count": 5,
           "created_at": "2025-12-10T...",
           "updated_at": "2025-12-10T..."
@@ -70,14 +70,14 @@ def conversation_list_create(request):
     Request:
     {
       "title": "New chat",  # optional
-      "model_id": "fin"     # required
+            "model_id": "azure-gpt-4o"     # required
     }
     
     Response: 201 Created
     {
       "id": "uuid",
       "title": "New chat",
-      "model_id": "fin",
+            "model_id": "azure-gpt-4o",
       "messages": [],
       "created_at": "2025-12-10T...",
       "updated_at": "2025-12-10T..."
@@ -123,7 +123,7 @@ def conversation_detail(request, conversation_id):
     {
       "id": "uuid",
       "title": "Chat title",
-      "model_id": "fin",
+            "model_id": "azure-gpt-4o",
       "messages": [
         {
           "id": "uuid",

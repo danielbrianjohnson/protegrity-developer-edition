@@ -1,6 +1,6 @@
 # Protegrity AI Developer Edition Hackathon 2026
 
-A secure multi-LLM chat interface with enterprise-grade data protection, role-based access control, and comprehensive audit trails. Built with React and Django, featuring Protegrity PII protection, Intercom Fin AI, and Amazon Bedrock Claude integrations.
+A secure multi-LLM chat interface with enterprise-grade data protection, role-based access control, and comprehensive audit trails. Built with React and Django, featuring Protegrity PII protection and provider-flexible LLM integrations.
 
 Protegrity AI Developer Edition full app sample.
 

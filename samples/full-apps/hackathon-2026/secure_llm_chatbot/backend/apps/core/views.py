@@ -40,7 +40,7 @@ def get_models(request):
     Returns:
       {
         "models": [
-          {"id": "fin", "name": "Fin AI", "description": "...", "provider": "intercom"},
+          {"id": "azure-gpt-4o", "name": "GPT-4o (Azure)", "description": "...", "provider": "azure"},
           ...
         ]
       }
@@ -86,7 +86,7 @@ def get_agents(request):
             "id": "data-protection-expert",
             "name": "Data Protection Expert",
             "description": "...",
-            "default_llm": "fin",
+            "default_llm": "dummy",
             "icon": "shield",
             "color": "#FA5A25"
           },
@@ -175,7 +175,7 @@ def chat(request):
       {
         "conversation_id": "optional-uuid",  # If omitted, creates new conversation
         "message": "user message",
-        "model_id": "fin" | "bedrock-claude",  # Optional, sets primary_llm
+        "model_id": "azure-gpt-4o" | "bedrock-claude",  # Optional, sets primary_llm
         "agent_id": "data-protection-expert" | "general-assistant",  # Optional, sets primary_agent
         "protegrity_mode": "redact" | "protect" | "none"  # Optional, default: "redact"
       }
@@ -201,7 +201,7 @@ def chat(request):
 
     message = data.get("message", "") or ""
     conversation_id = data.get("conversation_id") or None
-    model_id = data.get("model_id") or None  # Don't default to "fin", allow fallback to agent's default
+    model_id = data.get("model_id") or None  # No hardcoded default model; allow fallback to agent/user default
     agent_id = data.get("agent_id") or None
     protegrity_mode = data.get("protegrity_mode", "redact")  # "redact", "protect", or "none"
 
@@ -487,7 +487,7 @@ def chat(request):
 @csrf_exempt
 def poll_conversation(request, conversation_id):
     """
-    Poll for async LLM response (e.g., Fin AI).
+    Poll for async LLM response when selected provider requires polling.
     Uses ChatOrchestrator to handle tool execution and message persistence.
     
     GET /api/chat/poll/<conversation_id>/

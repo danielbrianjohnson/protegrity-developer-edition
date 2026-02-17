@@ -40,6 +40,11 @@ class Command(BaseCommand):
         """Seed LLM provider configurations."""
         self.stdout.write('\nSeeding LLM Providers...')
 
+        # Remove legacy Fin/Intercom providers to keep runtime provider list vendor-neutral.
+        removed_count, _ = LLMProvider.objects.filter(provider_type='intercom').delete()
+        if removed_count:
+            self.stdout.write(f"  Removed {removed_count} legacy Intercom/Fin provider records")
+
         llm_providers = [
             {
                 'id': 'dummy',
@@ -57,25 +62,6 @@ class Command(BaseCommand):
                 'configuration': {
                     'local': True,
                     'deterministic': True
-                }
-            },
-            {
-                'id': 'fin',
-                'name': 'Fin AI',
-                'provider_type': 'intercom',
-                'description': 'Intercom Fin AI with knowledge base integration',
-                'model_identifier': 'fin-2.0',
-                'is_active': True,
-                'min_role': 'STANDARD',
-                'requires_polling': True,
-                'max_tokens': 4096,
-                'supports_streaming': False,
-                'cost_per_1k_input_tokens': 0.003,
-                'cost_per_1k_output_tokens': 0.015,
-                'display_order': 2,
-                'configuration': {
-                    'api_endpoint': 'https://api.intercom.io',
-                    'requires_contact': True
                 }
             },
             {
@@ -315,8 +301,8 @@ class Command(BaseCommand):
 
         # Get LLM providers
         dummy_llm = LLMProvider.objects.get(id='dummy')
-        fin_llm = LLMProvider.objects.get(id='fin')
         bedrock_llm = LLMProvider.objects.get(id='bedrock-claude')
+        azure_llms = list(LLMProvider.objects.filter(provider_type='azure'))
 
         # Get tools
         redact_tool = Tool.objects.get(id='protegrity-redact')
@@ -369,8 +355,9 @@ You communicate in a professional yet approachable manner.''',
                 defaults=agent_data
             )
             
-            # Set allowed LLMs and tools (include dummy for all agents)
-            agent.allowed_llms.set([dummy_llm, fin_llm, bedrock_llm])
+            # Set allowed LLMs and tools (exclude legacy Fin/Intercom)
+            allowed_llms = [dummy_llm, bedrock_llm, *azure_llms]
+            agent.allowed_llms.set(allowed_llms)
             if tools:
                 agent.tools.set(tools)
             

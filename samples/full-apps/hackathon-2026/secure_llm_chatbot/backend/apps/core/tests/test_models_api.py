@@ -33,10 +33,10 @@ class ModelsAPITestCase(TestCase):
         # Create test LLM providers (these tests expect specific models)
         from apps.core.models import LLMProvider
         LLMProvider.objects.create(
-            id='fin',
-            name='Fin AI',
-            provider_type='intercom',
-            description='Intercom Fin AI',
+            id='azure-gpt-4o',
+            name='GPT-4o (Azure)',
+            provider_type='azure',
+            description='Azure GPT-4o',
             is_active=True,
             min_role='STANDARD'
         )
@@ -90,13 +90,13 @@ class ModelsAPITestCase(TestCase):
             self.assertIsInstance(model['description'], str)
             self.assertIsInstance(model['provider'], str)
 
-    def test_models_includes_fin(self):
-        """Models list should include Fin AI"""
+    def test_models_includes_azure(self):
+        """Models list should include Azure model"""
         response = self.client.get('/api/models/')
         data = response.json()
         
         model_ids = [m['id'] for m in data['models']]
-        self.assertIn('fin', model_ids)
+        self.assertIn('azure-gpt-4o', model_ids)
 
     def test_models_includes_bedrock(self):
         """Models list should include Bedrock Claude"""
@@ -105,3 +105,15 @@ class ModelsAPITestCase(TestCase):
         
         model_ids = [m['id'] for m in data['models']]
         self.assertIn('bedrock-claude', model_ids)
+
+    def test_models_filtered_by_enabled_provider_env(self):
+        """When ENABLED_LLM_PROVIDERS is set, only matching provider models are returned."""
+        os.environ["ENABLED_LLM_PROVIDERS"] = "azure_openai"
+
+        response = self.client.get('/api/models/')
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        model_ids = [m['id'] for m in data['models']]
+        self.assertIn('azure-gpt-4o', model_ids)
+        self.assertNotIn('bedrock-claude', model_ids)

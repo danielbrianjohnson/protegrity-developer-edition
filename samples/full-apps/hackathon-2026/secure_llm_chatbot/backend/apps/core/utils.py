@@ -58,7 +58,7 @@ def get_user_role(user) -> str:
     Returns:
         str: User's role - one of:
             - "PROTEGRITY": Full access to all active resources
-            - "STANDARD": Limited access (Fin AI only, no agents/tools)
+            - "STANDARD": Limited access to resources marked for STANDARD
             - "ANONYMOUS": No access (unauthenticated users)
     
     Usage:
@@ -92,7 +92,7 @@ def get_default_llm_for_user(user):
     they're allowed to access, then selects the first active model by display_order.
     
     Rules:
-    - STANDARD users: Only models with min_role="STANDARD" (typically Fin AI)
+    - STANDARD users: Only models with min_role="STANDARD"
     - PROTEGRITY users: Any active model, ordered by display_order
     - Returns None if no models are available for the user's role
     

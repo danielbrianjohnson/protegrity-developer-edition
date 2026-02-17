@@ -11,6 +11,8 @@ Serialization Strategy:
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import Conversation, Message
+from .permissions import filter_by_role
+from .llm_config import filter_enabled_llm_provider_queryset
 
 User = get_user_model()
 
@@ -157,11 +159,20 @@ class ConversationCreateSerializer(serializers.ModelSerializer):
         fields = ['title', 'model_id']
     
     def validate_model_id(self, value):
-        """Validate that model_id is a known model."""
-        valid_models = ['fin', 'bedrock-claude']
+        """Validate that model_id is accessible for the current user and env config."""
+        from .models import LLMProvider
+
+        request = self.context.get("request")
+        qs = LLMProvider.objects.filter(is_active=True)
+        qs = filter_enabled_llm_provider_queryset(qs)
+        if request is not None:
+            qs = filter_by_role(qs, request.user)
+
+        valid_models = set(qs.values_list("id", flat=True))
         if value not in valid_models:
+            available = ", ".join(sorted(valid_models)) if valid_models else "none"
             raise serializers.ValidationError(
-                f"Invalid model_id. Must be one of: {', '.join(valid_models)}"
+                f"Invalid model_id. Available models: {available}"
             )
         return value
 

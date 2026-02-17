@@ -18,8 +18,6 @@ def test_validate_llm_provider_configuration_none_configured(monkeypatch):
         "AWS_ACCESS_KEY_ID",
         "AWS_SECRET_ACCESS_KEY",
         "AWS_DEFAULT_REGION",
-        "INTERCOM_ACCESS_TOKEN",
-        "INTERCOM_FIN_APP_ID",
     ]:
         monkeypatch.delenv(env_var, raising=False)
 

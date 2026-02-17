@@ -37,10 +37,6 @@ PROVIDER_SPECS: Dict[str, ProviderSpec] = {
         canonical_name="bedrock",
         required_env_vars=("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_DEFAULT_REGION"),
     ),
-    "intercom": ProviderSpec(
-        canonical_name="intercom",
-        required_env_vars=("INTERCOM_ACCESS_TOKEN", "INTERCOM_FIN_APP_ID"),
-    ),
 }
 
 
@@ -50,8 +46,6 @@ PROVIDER_ALIASES = {
     "openai": "openai",
     "anthropic": "anthropic",
     "bedrock": "bedrock",
-    "intercom": "intercom",
-    "fin": "intercom",
 }
 
 
@@ -101,7 +95,7 @@ def get_enabled_llm_providers() -> Set[str]:
     2) Otherwise, auto-detect providers by checking required env vars.
 
     Returns:
-        Set of canonical provider_type names (openai, azure, anthropic, bedrock, intercom).
+        Set of canonical provider_type names (openai, azure, anthropic, bedrock).
     """
     raw_enabled = os.getenv("ENABLED_LLM_PROVIDERS", "").strip()
 

@@ -82,7 +82,7 @@ def check_resource_access(user, resource) -> bool:
         bool: True if user can access resource, False otherwise
     
     Usage:
-        llm = LLMProvider.objects.get(id="fin")
+        llm = LLMProvider.objects.get(id="azure-gpt-4o")
         if check_resource_access(request.user, llm):
             # User can use this model
             pass

@@ -533,24 +533,28 @@ function App() {
       try {
         const { apiGet } = await import('./api/client');
         const data = await apiGet("/api/models/");
-        setAvailableModels(data.models || []);
-        
-        // Always auto-select first model if none selected
-        if (data.models && data.models.length > 0 && !selectedModel) {
-          setSelectedModel(data.models[0]);
-          console.log("Auto-selected default model:", data.models[0].name);
+        const models = data.models || [];
+        setAvailableModels(models);
+
+        if (models.length === 0) {
+          setSelectedModel(null);
+          return;
+        }
+
+        // Keep current selection if still available; otherwise select first valid model.
+        const currentSelectedId = selectedModel?.id;
+        const selectedStillExists = currentSelectedId
+          ? models.some((model) => model.id === currentSelectedId)
+          : false;
+
+        if (!selectedStillExists) {
+          setSelectedModel(models[0]);
+          console.log("Auto-selected default model:", models[0].name);
         }
       } catch (error) {
         console.error("Failed to fetch models:", error);
-        // Set default models if fetch fails
-        const defaultModels = [
-          { id: "fin", name: "Fin AI", description: "Intercom Fin AI with knowledge base" }
-        ];
-        setAvailableModels(defaultModels);
-        if (!selectedModel) {
-          setSelectedModel(defaultModels[0]);
-          console.log("Auto-selected fallback model:", defaultModels[0].name);
-        }
+        setAvailableModels([]);
+        setSelectedModel(null);
       }
     };
 
