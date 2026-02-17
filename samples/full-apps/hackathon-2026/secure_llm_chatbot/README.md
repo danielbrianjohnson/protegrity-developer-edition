@@ -1,89 +1,62 @@
-# Protegrity AI Developer Edition Hackathon 2026
+# Secure LLM Chatbot (Sample App)
 
-A secure multi-LLM chat interface with enterprise-grade data protection, role-based access control, and comprehensive audit trails. Built with React and Django, featuring Protegrity PII protection and provider-flexible LLM integrations.
+Lightweight sample app for testing secure LLM chat workflows with Protegrity scanning/redaction.
 
-Protegrity AI Developer Edition full app sample.
+## What this sample includes
 
-## Demo video
+- Django backend with chat + conversation APIs
+- React frontend chat UI
+- Protegrity guardrail and classification integration
+- Vendor-neutral LLM provider config via `backend/.env`
 
-https://www.youtube.com/watch?v=DcSQH0ZOf3E
+## Quick start
 
-## Quick Start
-
-1) Copy env template:
+1. Create env file:
 
 ```bash
 cp backend/.env.example backend/.env
 ```
 
-2) Configure at least one LLM provider in `backend/.env`:
-- Uncomment one provider block in `backend/.env.example`
-- Fill required API credentials for that provider
+2. Configure one provider in `backend/.env` (Azure OpenAI is the fastest path).
 
-3) Run:
+3. Run the app:
 
 ```bash
 ./run.sh
 ```
 
-4) Stop:
+4. Open:
+
+- Frontend: `http://localhost:5173`
+- Backend: `http://127.0.0.1:8000`
+
+5. Stop:
 
 ```bash
 ./stop.sh
 ```
 
-📖 Additional details: [documentation/OVERVIEW.md](documentation/OVERVIEW.md)
+## Important notes
 
----
+- Use `./run.sh` (not `./run`).
+- The only runtime env file is `backend/.env`.
+- Startup auto-validates providers and syncs active models from env.
+- For Azure-only setups, use `AZURE_OPENAI_DEPLOYMENTS` to limit visible models.
 
-## Project structure
+## Minimal structure
 
 ```text
 secure_llm_chatbot/
 ├── backend/
-├── frontend/
+│   ├── .env.example
+│   └── apps/core/
+├── frontend/console/
 ├── documentation/
 ├── run.sh
-├── stop.sh
-└── requirements.txt
+└── stop.sh
 ```
 
-## Notes
-
-- This sample runs **inside** the main `protegrity-developer-edition` repo.
-- Do not use a nested repo copy inside this directory.
-- Docker services are always managed from the repo-root `docker-compose.yml`.
-
-## LLM Provider Configuration (Vendor-neutral)
-
-- You must configure at least one LLM provider in `backend/.env`.
-- You can configure multiple providers at once (via `ENABLED_LLM_PROVIDERS` or auto-detection).
-- If multiple providers are configured, available models/providers are exposed by backend APIs and can be selected in the app UI.
-
-Quick start:
-
-```bash
-cp backend/.env.example backend/.env
-```
-
-Then open `backend/.env`, uncomment one provider block, and fill required values.
-
-Common options:
-
-- OpenAI: `OPENAI_API_KEY`
-- Azure OpenAI: `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT` (recommended quick start)
-- Anthropic direct: `ANTHROPIC_API_KEY`
-- Amazon Bedrock: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`
-
-Start the app:
-
-```bash
-./run.sh
-```
-
-With zero configured providers, startup fails early with guidance and points to `backend/.env.example`.
-
-## More docs
+## Additional docs
 
 - [documentation/OVERVIEW.md](documentation/OVERVIEW.md)
 - [documentation/backend/RUN.md](documentation/backend/RUN.md)
