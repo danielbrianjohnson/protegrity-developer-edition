@@ -1,0 +1,17 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Backend env
+backend/.env
+.env
+
+# Frontend
+frontend/console/node_modules/
+node_modules/
+dist/
+
+# Runtime artifacts
+.backend.pid
