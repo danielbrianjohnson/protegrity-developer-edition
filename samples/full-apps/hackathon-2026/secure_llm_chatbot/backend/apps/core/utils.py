@@ -71,7 +71,12 @@ def get_user_role(user) -> str:
     if not getattr(user, "is_authenticated", False):
         return "ANONYMOUS"
     
-    # Check if user is in "Protegrity Users" group
+    # Prefer explicit UserProfile role when available
+    profile = getattr(user, "profile", None)
+    if profile and getattr(profile, "role", None) in {"PROTEGRITY", "STANDARD"}:
+        return profile.role
+
+    # Fallback: Check if user is in "Protegrity Users" group
     if user.groups.filter(name="Protegrity Users").exists():
         return "PROTEGRITY"
     

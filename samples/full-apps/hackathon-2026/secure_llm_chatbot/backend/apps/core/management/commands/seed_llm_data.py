@@ -66,6 +66,7 @@ class Command(BaseCommand):
                 'description': 'Intercom Fin AI with knowledge base integration',
                 'model_identifier': 'fin-2.0',
                 'is_active': True,
+                'min_role': 'STANDARD',
                 'requires_polling': True,
                 'max_tokens': 4096,
                 'supports_streaming': False,

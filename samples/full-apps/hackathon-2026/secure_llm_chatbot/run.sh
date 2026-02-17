@@ -140,6 +140,27 @@ fi
 echo "Running Django migrations..."
 (cd "$BACKEND_DIR" && "$SAMPLE_DIR/.venv/bin/python" manage.py migrate)
 
+echo "Seeding LLM providers, tools, and agents..."
+(cd "$BACKEND_DIR" && "$SAMPLE_DIR/.venv/bin/python" manage.py seed_llm_data)
+
+echo "Syncing enabled LLM models from backend/.env ..."
+(
+  cd "$BACKEND_DIR"
+  "$SAMPLE_DIR/.venv/bin/python" manage.py shell <<'PY'
+from apps.core.llm_config import validate_llm_provider_configuration
+from apps.core.models import LLMProvider
+
+enabled = sorted(validate_llm_provider_configuration())
+
+# Enable models for configured providers and disable the rest.
+LLMProvider.objects.filter(provider_type__in=enabled).update(is_active=True)
+LLMProvider.objects.exclude(provider_type__in=enabled).update(is_active=False)
+
+print("Enabled provider types:", ", ".join(enabled))
+print("Active models:", list(LLMProvider.objects.filter(is_active=True).values_list("id", flat=True)))
+PY
+)
+
 DEMO_USERNAME="${DEMO_USERNAME:-protegrity_demo}"
 DEMO_PASSWORD="${DEMO_PASSWORD:-ProtegrityDemo!2026}"
 DEMO_ROLE="${DEMO_ROLE:-PROTEGRITY}"
@@ -153,6 +174,7 @@ echo "Ensuring demo user account exists ($DEMO_USERNAME)..."
   "$SAMPLE_DIR/.venv/bin/python" manage.py shell <<'PY'
 import os
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from apps.core.models import UserProfile
 
 username = os.environ["DEMO_USERNAME"]
@@ -186,6 +208,17 @@ profile, _ = UserProfile.objects.get_or_create(user=user)
 if profile.role != role:
   profile.role = role
   profile.save(update_fields=["role", "updated_at"])
+
+# Keep Django groups aligned with profile role for legacy role checks
+protegrity_group, _ = Group.objects.get_or_create(name="Protegrity Users")
+standard_group, _ = Group.objects.get_or_create(name="Standard Users")
+
+if role == "PROTEGRITY":
+  user.groups.add(protegrity_group)
+  user.groups.remove(standard_group)
+else:
+  user.groups.add(standard_group)
+  user.groups.remove(protegrity_group)
 
 print(f"Demo user ready: {username} (role={profile.role})")
 PY

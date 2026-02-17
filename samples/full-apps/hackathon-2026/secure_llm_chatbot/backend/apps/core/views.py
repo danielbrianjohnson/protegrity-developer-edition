@@ -213,7 +213,7 @@ def chat(request):
         if raw_enabled_list:
             enabled_provider_types = validate_llm_provider_configuration()
         else:
-            enabled_provider_types = get_enabled_llm_providers()
+            enabled_provider_types = set()
     except ImproperlyConfigured as exc:
         return error_response(
             str(exc),

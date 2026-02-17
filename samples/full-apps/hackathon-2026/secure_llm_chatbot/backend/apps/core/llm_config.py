@@ -164,6 +164,10 @@ def filter_enabled_llm_provider_queryset(queryset):
     - If no provider can be resolved from env, returns original queryset unchanged.
       (Strict validation is enforced via validate_llm_provider_configuration in startup preflight.)
     """
+    raw_enabled = os.getenv("ENABLED_LLM_PROVIDERS", "").strip()
+    if not raw_enabled:
+        return queryset
+
     enabled = get_enabled_llm_providers()
     if not enabled:
         return queryset

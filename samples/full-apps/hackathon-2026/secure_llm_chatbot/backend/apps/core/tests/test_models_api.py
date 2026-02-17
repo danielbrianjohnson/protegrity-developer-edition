@@ -1,5 +1,6 @@
 # backend/apps/core/tests/test_models_api.py
 import json
+import os
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -12,6 +13,9 @@ class ModelsAPITestCase(TestCase):
     """Tests for the models API endpoint"""
 
     def setUp(self):
+        self._original_enabled_providers = os.environ.get("ENABLED_LLM_PROVIDERS")
+        os.environ.pop("ENABLED_LLM_PROVIDERS", None)
+
         # Create a PROTEGRITY user for testing via Django Groups
         self.user = User.objects.create_user(
             username='testuser@example.com',
@@ -19,6 +23,8 @@ class ModelsAPITestCase(TestCase):
         )
         protegrity_group, _ = Group.objects.get_or_create(name="Protegrity Users")
         self.user.groups.add(protegrity_group)
+        self.user.profile.role = "PROTEGRITY"
+        self.user.profile.save(update_fields=["role", "updated_at"])
         
         # Use APIClient and authenticate
         self.client = APIClient()
@@ -42,6 +48,13 @@ class ModelsAPITestCase(TestCase):
             is_active=True,
             min_role='PROTEGRITY'
         )
+
+    def tearDown(self):
+        if self._original_enabled_providers is None:
+            os.environ.pop("ENABLED_LLM_PROVIDERS", None)
+        else:
+            os.environ["ENABLED_LLM_PROVIDERS"] = self._original_enabled_providers
+        super().tearDown()
 
     def test_models_requires_get(self):
         """Models endpoint should only accept GET requests"""
