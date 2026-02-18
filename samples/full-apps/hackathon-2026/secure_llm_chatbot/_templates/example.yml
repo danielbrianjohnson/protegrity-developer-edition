@@ -1,0 +1,18 @@
+name: "Example Name"
+slug: "example-slug"
+industry: "developer-experience"
+owner: "Owner Name"
+difficulty: "intermediate"
+runtime: ["docker"]
+languages: ["python"]
+models: []
+features:
+  - data-discovery
+products:
+  - "Developer Edition"
+summary: >
+  Short summary for catalog listing.
+use_case: "Primary use case"
+security_notes:
+  - "No real customer data"
+  - "Demo dataset is synthetic"

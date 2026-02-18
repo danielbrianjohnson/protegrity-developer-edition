@@ -1,63 +1,93 @@
-# Secure LLM Chatbot (Sample App)
+# Protegrity AI Developer Edition — Example Applications (Secure LLM Chatbot Scope)
 
-Lightweight sample app for testing secure LLM chat workflows with Protegrity scanning/redaction.
+This folder is organized as an example-repo-style showcase for the Secure LLM Chatbot sample, aligned to industry-first navigation and feature-tagged discovery.
 
-## What this sample includes
+The runnable example is packaged under `examples/<industry>/<example-slug>` and uses metadata plus catalog files so additional examples can be added consistently.
 
-- Django backend with chat + conversation APIs
-- React frontend chat UI
-- Protegrity guardrail and classification integration
-- Vendor-neutral LLM provider config via `backend/.env`
+---
 
-## Quick start
+## How this project is organized
 
-1. Create env file:
+Primary navigation is by industry/domain, then by example slug:
 
-```bash
-cp backend/.env.example backend/.env
+```text
+examples/
+	developer-experience/
+		protegrity-ai-llm/
+			README.md
+			example.yml
+			.env.example
+			app/
+			docs/
+			data/
+			infra/
 ```
 
-2. Configure one provider in `backend/.env` (Azure OpenAI is the fastest path).
+Secondary navigation is by feature tags, defined once in `catalog/features.yml` and referenced by each `example.yml`.
 
-3. Run the app:
+---
+
+## Quick start (run this example)
+
+1) Go to the example folder
 
 ```bash
+cd examples/developer-experience/protegrity-ai-llm
+```
+
+2) Copy env vars
+
+```bash
+cp .env.example app/backend/.env
+```
+
+3) Run
+
+```bash
+cd app
 ./run.sh
 ```
 
-4. Open:
+4) Open
 
-- Frontend: `http://localhost:5173`
-- Backend: `http://127.0.0.1:8000`
+- Frontend: http://localhost:5173
+- Backend: http://127.0.0.1:8000
 
-5. Stop:
+---
 
-```bash
-./stop.sh
-```
+## Examples catalog
 
-## Important notes
+### Developer Experience / Platform
 
-- Use `./run.sh` (not `./run`).
-- The only runtime env file is `backend/.env`.
-- Startup auto-validates providers and syncs active models from env.
-- For Azure-only setups, use `AZURE_OPENAI_DEPLOYMENTS` to limit visible models.
+- **Protegrity AI (LLM)** (`examples/developer-experience/protegrity-ai-llm`)  
+	Full-stack secure chatbot with Protegrity data discovery, redaction, tokenization controls, and semantic guardrails around LLM requests and responses.
 
-## Minimal structure
+---
 
-```text
-secure_llm_chatbot/
-├── backend/
-│   ├── .env.example
-│   └── apps/core/
-├── frontend/console/
-├── documentation/
-├── run.sh
-└── stop.sh
-```
+## Browse by feature
 
-## Additional docs
+| Feature / Capability | Examples |
+|---|---|
+| Data discovery | Protegrity AI (LLM) |
+| PII redaction | Protegrity AI (LLM) |
+| Tokenization / Detokenization | Protegrity AI (LLM) |
+| Semantic guardrails | Protegrity AI (LLM) |
+| Auditing / logging | Protegrity AI (LLM) |
 
-- [documentation/OVERVIEW.md](documentation/OVERVIEW.md)
-- [documentation/backend/RUN.md](documentation/backend/RUN.md)
-- [documentation/frontend/RUN.md](documentation/frontend/RUN.md)
+Tip: See `catalog/examples.json` and `examples/**/example.yml` for machine-readable metadata.
+
+---
+
+## Conventions
+
+- Slugs are kebab-case.
+- Every example includes `README.md`, `example.yml`, and `.env.example`.
+- No real customer data in the sample; use synthetic/demo data only.
+- Secrets are never committed; use environment variables.
+
+---
+
+## Supporting docs
+
+- Plan: `docs/REPO_COMPLIANCE_PLAN.md`
+- Example details: `examples/developer-experience/protegrity-ai-llm/README.md`
