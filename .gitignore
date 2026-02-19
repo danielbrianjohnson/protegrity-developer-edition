@@ -85,3 +85,5 @@ hs_err_pid*
 target/
 out/
 
+db.sqlite3
+.env

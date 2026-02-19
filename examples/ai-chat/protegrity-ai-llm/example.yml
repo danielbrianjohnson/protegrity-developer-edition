@@ -1,0 +1,23 @@
+name: "Protegrity AI (LLM)"
+slug: "protegrity-ai-llm"
+industry: "ai-chat"
+owner: "Dan Johnson"
+difficulty: "intermediate"
+runtime: ["docker", "local"]
+languages: ["python", "javascript"]
+models: ["gpt-4o", "claude-3-5-sonnet-latest"]
+features:
+  - data-discovery
+  - pii-redaction
+  - tokenization
+  - semantic-guardrails
+  - auditing-logging
+products:
+  - "Developer Edition"
+summary: >
+  Full-stack secure chatbot sample that integrates Protegrity discovery, redaction,
+  tokenization controls, and semantic guardrails around LLM workflows.
+use_case: "Developer-facing secure chatbot for privacy-first GenAI patterns"
+security_notes:
+  - "No real customer data"
+  - "Use synthetic prompts and local-only credentials"
