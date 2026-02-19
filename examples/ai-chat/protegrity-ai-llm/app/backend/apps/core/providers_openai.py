@@ -39,9 +39,30 @@ class OpenAIProvider(BaseLLMProvider):
 
         config = llm_provider.configuration or {}
         self.temperature = config.get("temperature", 0.7)
-        self.max_tokens = config.get("max_tokens", llm_provider.max_tokens)
+
+        configured_output_tokens = (
+            config.get("max_output_tokens")
+            or config.get("max_tokens")
+            or os.environ.get("OPENAI_MAX_OUTPUT_TOKENS")
+            or 2048
+        )
+        self.max_output_tokens = self._normalize_max_output_tokens(configured_output_tokens)
 
         logger.info("Initialized OpenAI provider: %s (%s)", llm_provider.name, self.model_name)
+
+    @staticmethod
+    def _normalize_max_output_tokens(raw_value):
+        """Convert configured token value into a safe integer for OpenAI output tokens."""
+        try:
+            parsed = int(raw_value)
+        except (TypeError, ValueError):
+            return 2048
+
+        if parsed <= 0:
+            return 2048
+
+        # Keep a conservative cap to avoid model-specific output-token validation errors.
+        return min(parsed, 4096)
 
     def _build_messages(self, messages, agent=None):
         openai_messages = []
@@ -99,7 +120,7 @@ class OpenAIProvider(BaseLLMProvider):
                 "model": self.model_name,
                 "messages": self._build_messages(messages, agent),
                 "temperature": self.temperature,
-                "max_tokens": self.max_tokens,
+                "max_tokens": self.max_output_tokens,
             }
 
             tools = self._build_tools(agent)
@@ -107,7 +128,20 @@ class OpenAIProvider(BaseLLMProvider):
                 payload["tools"] = tools
                 payload["tool_choice"] = "auto"
 
-            response = self.client.chat.completions.create(**payload)
+            try:
+                response = self.client.chat.completions.create(**payload)
+            except APIError as exc:
+                message = str(exc).lower()
+                if "max_tokens" in message or "maximum context length" in message:
+                    logger.warning(
+                        "OpenAI rejected max_tokens=%s for model %s; retrying without max_tokens",
+                        self.max_output_tokens,
+                        self.model_name,
+                    )
+                    payload.pop("max_tokens", None)
+                    response = self.client.chat.completions.create(**payload)
+                else:
+                    raise
 
             response_message = response.choices[0].message
             content = response_message.content or ""
