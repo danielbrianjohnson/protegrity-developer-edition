@@ -16,6 +16,29 @@ This example is a secure chat application that applies Protegrity checks before 
 4. Backend runs Protegrity output processing on the model response.
 5. Safe response (plus analysis metadata) is returned to the frontend.
 
+## Flow Diagram
+
+```mermaid
+flowchart LR
+	U[User]
+	F[Frontend\nReact + Vite]
+	B[Backend API\nDjango + DRF]
+	PI[Protegrity Input Check\nGuardrails + PII Scan]
+	LLM[Configured LLM Provider]
+	PO[Protegrity Output Check\nGuardrails + PII Scan]
+	R[Safe Response + Analysis Metadata]
+
+	U --> F
+	F --> B
+	B --> PI
+	PI --> LLM
+	LLM --> PO
+	PO --> B
+	B --> R
+	R --> F
+	F --> U
+```
+
 ## Main Components
 
 ### Backend
