@@ -249,7 +249,7 @@ def get_provider(llm_provider):
         from .providers_azure import AzureOpenAIProvider
         return AzureOpenAIProvider(llm_provider)
     
-    # TODO: Add other real provider mappings when credentials are available
+    # Extend provider mappings here when adding additional providers.
     # 
     # if provider_type == "intercom":
     #     from .providers_fin import FinAIProvider

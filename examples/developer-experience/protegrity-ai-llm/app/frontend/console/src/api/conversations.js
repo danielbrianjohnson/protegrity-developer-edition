@@ -69,20 +69,10 @@ export async function addMessage(conversationId, data) {
  * @returns {Object} - Conversation in app format
  */
 export function transformConversation(dbConversation) {
-  console.log('[transformConversation] Raw conversation:', dbConversation);
-  
   const transformed = {
     id: dbConversation.id,
     title: dbConversation.title,
     messages: (dbConversation.messages || []).map((msg) => {
-      console.log('[transformConversation] Message:', {
-        role: msg.role,
-        hasProtegrityData: !!msg.protegrity_data,
-        protegrityData: msg.protegrity_data,
-        agent: msg.agent,
-        llm_provider: msg.llm_provider
-      });
-      
       return {
         role: msg.role,
         content: msg.content,
@@ -96,7 +86,6 @@ export function transformConversation(dbConversation) {
     createdAt: new Date(dbConversation.created_at),
     updatedAt: new Date(dbConversation.updated_at),
   };
-  
-  console.log('[transformConversation] Transformed:', transformed);
+
   return transformed;
 }

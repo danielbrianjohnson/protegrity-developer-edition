@@ -47,8 +47,7 @@ function Sidebar({
 
   const handleShareConversation = (e, conversationId) => {
     e.stopPropagation();
-    // TODO: Implement share functionality
-    console.log('Share conversation:', conversationId);
+    void conversationId;
     alert('Share functionality coming soon!');
     setOpenMenuId(null);
   };

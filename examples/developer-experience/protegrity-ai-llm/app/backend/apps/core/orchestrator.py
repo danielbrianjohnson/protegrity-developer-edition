@@ -86,7 +86,12 @@ class ChatOrchestrator:
         return agent, llm
     
     @transaction.atomic
-    def handle_user_message(self, conversation: Conversation, user_message: Message) -> Dict[str, Any]:
+    def handle_user_message(
+        self,
+        conversation: Conversation,
+        user_message: Message,
+        protegrity_mode: str = "redact",
+    ) -> Dict[str, Any]:
         """
         Process a new user message through the complete chat pipeline.
         
@@ -115,7 +120,7 @@ class ChatOrchestrator:
         protegrity_service = get_protegrity_service()
         input_result = protegrity_service.process_full_pipeline(
             user_message.content,
-            mode="redact"
+            mode=protegrity_mode or "redact"
         )
         # Wrap input protection data in input_processing key (matching frontend expectations)
         user_message.protegrity_data = {

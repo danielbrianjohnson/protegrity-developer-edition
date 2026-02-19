@@ -8,25 +8,12 @@ import Button from "../common/Button";
 function ChatMessage({ role, content, pending, protegrityData, agent, llmProvider, agents = [], models = [] }) {
   const isUser = role === "user";
   const [showInspection, setShowInspection] = useState(false); // Start hidden by default
-  const [showDebugInfo, setShowDebugInfo] = useState(false); // Debug toggle for agent/LLM info
+  const showDebugInfo = false;
   
   // Hide inspection when content changes (new message sent)
   useEffect(() => {
     setShowInspection(false);
   }, [content]);
-  
-  // DEBUG: Log protegrity data structure
-  useEffect(() => {
-    console.log('[ChatMessage Debug]', {
-      role,
-      isUser,
-      protegrityData,
-      hasInputProcessing: protegrityData?.input_processing,
-      hasOutputProcessing: protegrityData?.output_processing,
-      agent,
-      llmProvider
-    });
-  }, [role, isUser, protegrityData, agent, llmProvider]);
   
   // Check if we have Protegrity data to show
   const hasProtegrityData = protegrityData && (

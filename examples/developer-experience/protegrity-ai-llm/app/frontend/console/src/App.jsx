@@ -12,14 +12,10 @@ import LoginForm from "./components/LoginForm";
 import Button from "./components/common/Button";
 import Icon from "./components/common/Icon";
 import { POLLING } from "./constants/ui";
+import useAuthSession from "./hooks/useAuthSession";
 import { 
   sendChatMessage, 
   pollConversation, 
-  getCurrentUser, 
-  login,
-  getAccessToken,
-  setAccessToken,
-  clearTokens
 } from "./api/client";
 import { 
   fetchConversations, 
@@ -28,13 +24,6 @@ import {
 } from "./api/conversations";
 
 function App() {
-  // Auth State
-  const [currentUser, setCurrentUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(!!getAccessToken());
-  const [authLoading, setAuthLoading] = useState(true);
-  const [loginError, setLoginError] = useState(null);
-  const [loginSubmitting, setLoginSubmitting] = useState(false);
-  
   // State
   const [conversations, setConversations] = useState([]);
   const [activeConversationId, setActiveConversationId] = useState(null);
@@ -59,73 +48,24 @@ function App() {
     (conv) => conv.id === activeConversationId
   );
 
-  // Initial auth check on mount
-  useEffect(() => {
-    const bootstrapAuth = async () => {
-      const token = getAccessToken();
-      if (!token) {
-        setIsAuthenticated(false);
-        setAuthLoading(false);
-        return;
-      }
-
-      try {
-        const me = await getCurrentUser();
-        setCurrentUser(me);
-        setIsAuthenticated(true);
-      } catch (err) {
-        console.error("Failed to load current user:", err);
-        clearTokens();
-        setIsAuthenticated(false);
-      } finally {
-        setAuthLoading(false);
-      }
-    };
-
-    bootstrapAuth();
-  }, []);
-
-  const handleLogin = async ({ username, password }) => {
-    try {
-      setLoginError(null);
-      setLoginSubmitting(true);
-      
-      const tokens = await login({ username, password });
-      setAccessToken(tokens.access);
-
-      const me = await getCurrentUser();
-      setCurrentUser(me);
-      setIsAuthenticated(true);
-    } catch (err) {
-      console.error("Login failed:", err);
-      setLoginError(err.message || "Login failed");
-      setIsAuthenticated(false);
-      clearTokens();
-    } finally {
-      setLoginSubmitting(false);
-    }
-  };
-
-  const handleLogout = () => {
-    // Clear auth tokens
-    clearTokens();
-    
-    // Clear user state
-    setCurrentUser(null);
-    setIsAuthenticated(false);
-    
-    // Clear conversation and chat state
-    setConversations([]);
-    setActiveConversationId(null);
-    setMessages([]);
-    setError(null);
-    
-    // Clear model/agent selections
-    setSelectedModel(null);
-    setSelectedAgents([]);
-    
-    console.log("User logged out successfully");
-  };
+  const {
+    currentUser,
+    isAuthenticated,
+    authLoading,
+    loginError,
+    loginSubmitting,
+    handleLogin,
+    handleLogout,
+  } = useAuthSession({
+    onLogoutCleanup: () => {
+      setConversations([]);
+      setActiveConversationId(null);
+      setMessages([]);
+      setError(null);
+      setSelectedModel(null);
+      setSelectedAgents([]);
+    },
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -156,12 +96,9 @@ function App() {
   };
 
   const handleSelectConversation = async (conversationId) => {
-    console.log('handleSelectConversation called with:', conversationId);
-    
     // Check if conversation exists in local state
     const conversation = conversations.find((c) => c.id === conversationId);
     if (!conversation) {
-      console.error('Conversation not found in local state');
       return;
     }
     
@@ -171,7 +108,6 @@ function App() {
     // If conversation already has messages loaded, use them
     if (conversation.messages && conversation.messages.length > 0) {
       setMessages(conversation.messages);
-      console.log('Using cached messages:', conversation.messages.length);
       return;
     }
     
@@ -180,16 +116,8 @@ function App() {
       const { fetchConversation: fetchConv } = await import('./api/conversations');
       const fullConversation = await fetchConv(conversationId);
       
-      console.log('[handleSelectConversation] Raw API response:', fullConversation);
-      
       // Transform messages from snake_case to camelCase
       const transformedMessages = (fullConversation.messages || []).map((msg) => {
-        console.log('[handleSelectConversation] Transforming message:', {
-          role: msg.role,
-          has_protegrity_data: !!msg.protegrity_data,
-          protegrity_data: msg.protegrity_data
-        });
-        
         return {
           role: msg.role,
           content: msg.content,
@@ -200,8 +128,6 @@ function App() {
           llm_provider: msg.llm_provider || null,
         };
       });
-      
-      console.log('[handleSelectConversation] Transformed messages:', transformedMessages);
       
       // Update local state with fetched messages
       setMessages(transformedMessages);
@@ -215,9 +141,7 @@ function App() {
         )
       );
       
-      console.log('Fetched and set messages:', transformedMessages.length);
     } catch (error) {
-      console.error('Failed to fetch conversation messages:', error);
       setMessages([]);
     }
   };
@@ -233,7 +157,10 @@ function App() {
       
       setConversations(prev => prev.filter(conv => conv.id !== conversationId));
     } catch (error) {
-      console.error("Failed to delete conversation:", error);
+      setError({
+        code: "conversation_delete_failed",
+        message: "Failed to delete conversation. Please try again.",
+      });
     }
   };
 
@@ -303,9 +230,6 @@ function App() {
         protegrityMode: "redact", // Can be "redact", "protect", or "none"
       });
 
-      console.log("Chat response:", response);
-      console.log("Response status:", response.status);
-
       // Get the real conversation ID from backend (could be db_conversation_id for Fin or conversation_id for Bedrock)
       const realConversationId = response.db_conversation_id || response.conversation_id;
       
@@ -373,8 +297,6 @@ function App() {
         setPendingMessageIndex(null);
       }
     } catch (error) {
-      console.error("Failed to send message:", error);
-      
       // Handle 401 unauthorized - auto logout
       if (error.httpStatus === 401) {
         handleLogout();
@@ -460,8 +382,6 @@ function App() {
           pollingIntervalRef.current = null;
         }
       } catch (err) {
-        console.error("Polling error:", err);
-        
         // Error is already structured by API client
         setError({
           code: err.code || "poll_failed",
@@ -507,16 +427,12 @@ function App() {
         
         setConversations(transformed);
         
-        console.log(`Loaded ${transformed.length} conversations from database`);
-        
         // If user has conversations, automatically select the most recent one
         if (transformed.length > 0) {
           const mostRecentConv = transformed[0]; // Already sorted by updated_at DESC
           handleSelectConversation(mostRecentConv.id);
-          console.log('[loadConversations] Auto-selected most recent conversation:', mostRecentConv.id);
         }
       } catch (error) {
-        console.error("Failed to load conversations from database:", error);
         // Start with empty conversations if load fails
         setConversations([]);
       }
@@ -549,10 +465,8 @@ function App() {
 
         if (!selectedStillExists) {
           setSelectedModel(models[0]);
-          console.log("Auto-selected default model:", models[0].name);
         }
       } catch (error) {
-        console.error("Failed to fetch models:", error);
         setAvailableModels([]);
         setSelectedModel(null);
       }
@@ -563,13 +477,8 @@ function App() {
         const { apiGet } = await import('./api/client');
         const data = await apiGet("/api/agents/");
         setAvailableAgents(data.agents || []);
-        // Don't auto-select agent - it's optional
-        if (data.agents && data.agents.length > 0) {
-          // Agents are optional, don't auto-select any
-          console.log("Available agents loaded:", data.agents.length);
-        }
       } catch (error) {
-        console.error("Failed to fetch agents:", error);
+        setAvailableAgents([]);
       }
     };
 

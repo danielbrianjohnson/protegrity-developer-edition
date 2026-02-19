@@ -9,7 +9,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.core.exceptions import ImproperlyConfigured
 
-from .protegrity_service import get_protegrity_service
 from .models import Conversation, Message, LLMProvider, Agent, Tool
 from .serializers import CurrentUserSerializer
 from .utils import error_response
@@ -344,66 +343,20 @@ def chat(request):
         protegrity_data={}
     )
 
-    # Process input through Protegrity pipeline
-    protegrity_service = get_protegrity_service()
-    input_processing = {}
-    processed_message = message
-    
-    if protegrity_mode != "none":
-        input_processing = protegrity_service.process_full_pipeline(message, mode=protegrity_mode)
-        
-        # Update user message with Protegrity data
-        user_message.protegrity_data = {"input_processing": input_processing}
-        user_message.save(update_fields=["protegrity_data"])
-        
-        # Check if prompt should be blocked
-        if input_processing.get("should_block"):
-            # Save blocked system message
-            Message.objects.create(
-                conversation=conversation,
-                role="system",
-                content="This prompt was blocked by security guardrails due to policy violations.",
-                blocked=True,
-                protegrity_data={"input_processing": input_processing}
-            )
-            
-            # Update conversation title if it's new
-            if conversation.title == "New chat":
-                conversation.title = message[:50] + ("..." if len(message) > 50 else "")
-                conversation.save(update_fields=["title"])
-            
-            return JsonResponse(
-                {
-                    "conversation_id": str(conversation.id),
-                    "status": "blocked",
-                    "messages": [
-                        {"role": "user", "content": message},
-                        {
-                            "role": "system",
-                            "content": "This prompt was blocked by security guardrails due to policy violations.",
-                            "blocked": True
-                        },
-                    ],
-                    "protegrity_data": {
-                        "input_processing": input_processing,
-                        "output_processing": None
-                    }
-                },
-                status=200  # 200 because this is expected behavior
-            )
-        
-        # Use processed message for LLM
-        processed_message = input_processing.get("processed_text", message)
-
     # Use ChatOrchestrator to handle the message processing
     from .orchestrator import ChatOrchestrator
     
     orchestrator = ChatOrchestrator()
-    result = orchestrator.handle_user_message(conversation, user_message)
+    result = orchestrator.handle_user_message(
+        conversation,
+        user_message,
+        protegrity_mode=protegrity_mode,
+    )
     
     assistant_msg = result.get("assistant_message")
     tool_results = result.get("tool_results", [])
     status = result.get("status")
+    input_processing = (user_message.protegrity_data or {}).get("input_processing", {})
     
     # Update conversation title if new
     if conversation.title == "New chat":
@@ -447,6 +400,27 @@ def chat(request):
         return JsonResponse({
             "conversation_id": str(conversation.id),
             "status": "pending",
+            "messages": messages,
+            "tool_results": [],
+            "protegrity_data": {
+                "input_processing": input_processing,
+                "output_processing": None
+            }
+        })
+
+    elif status == "blocked":
+        messages = [
+            {"role": "user", "content": message},
+            {
+                "role": "system",
+                "content": assistant_msg.content if assistant_msg else "This prompt was blocked by security guardrails due to policy violations.",
+                "blocked": True,
+            },
+        ]
+
+        return JsonResponse({
+            "conversation_id": str(conversation.id),
+            "status": "blocked",
             "messages": messages,
             "tool_results": [],
             "protegrity_data": {
@@ -527,9 +501,9 @@ def poll_conversation(request, conversation_id):
             return JsonResponse({"status": "pending"})
         
         if status == "completed" and assistant_msg:
-            # Process response through Protegrity for output validation
-            protegrity_service = get_protegrity_service()
-            output_processing = protegrity_service.process_llm_response(assistant_msg.content or "")
+            output_processing = {}
+            if assistant_msg.protegrity_data:
+                output_processing = assistant_msg.protegrity_data.get("output_processing", {})
             
             # Update conversation timestamp
             conversation.updated_at = timezone.now()

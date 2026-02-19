@@ -9,7 +9,8 @@ API Architecture:
 """
 
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from django.db import models
@@ -37,6 +38,7 @@ class ConversationPagination(PageNumberPagination):
 
 
 @api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
 def conversation_list_create(request):
     """
     GET /api/conversations/
@@ -114,6 +116,7 @@ def conversation_list_create(request):
 
 
 @api_view(['GET', 'PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
 def conversation_detail(request, conversation_id):
     """
     GET /api/conversations/{id}/
@@ -196,6 +199,7 @@ def conversation_detail(request, conversation_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def conversation_messages_create(request, conversation_id):
     """
     POST /api/conversations/{id}/messages/
