@@ -21,22 +21,22 @@ This example is a secure chat application that applies Protegrity checks before 
 ```mermaid
 flowchart LR
 	U[User]
-	F[Frontend\nReact + Vite]
-	B[Backend API\nDjango + DRF]
-	PI[Protegrity Input Check\nGuardrails + PII Scan]
-	LLM[Configured LLM Provider]
-	PO[Protegrity Output Check\nGuardrails + PII Scan]
-	R[Safe Response + Analysis Metadata]
+	F[Frontend React + Vite]
+	B[Backend API Django + DRF]
+	PI[Protegrity Input Guardrails and PII Scan]
+	IB{Input Allowed?}
+	LLM[LLM Provider]
+	PO[Protegrity Output Guardrails and PII Scan]
+	OB{Output Allowed?}
+	S[Safe Response to User]
+	X[Blocked or Sanitized Fallback]
 
-	U --> F
-	F --> B
-	B --> PI
-	PI --> LLM
-	LLM --> PO
-	PO --> B
-	B --> R
-	R --> F
-	F --> U
+	U --> F --> B --> PI --> IB
+	IB -- No --> X --> F --> U
+	IB -- Yes, sanitized prompt only --> LLM
+	LLM --> PO --> OB
+	OB -- No --> X
+	OB -- Yes, sanitized output only --> S --> F --> U
 ```
 
 ## Main Components
