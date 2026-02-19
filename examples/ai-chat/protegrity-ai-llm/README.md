@@ -14,7 +14,7 @@ Here is the fastest way to understand the app flow before you run it locally:
 
 1. **Set environment file**
 	```bash
-	cp .env.example app/backend/.env
+	cp app/backend/.env.example app/backend/.env
 	```
 	Then fill provider credentials in `app/backend/.env`.
 
@@ -41,7 +41,7 @@ Developer and platform teams need a production-style reference for building GenA
 
 ## What it demonstrates
 
-- Industry-first sample packaging under `examples/developer-experience`.
+- Industry-first sample packaging under `examples/ai-chat`.
 - Protegrity data discovery and redaction integrated in chat workflow.
 - Semantic guardrails applied before and after LLM interaction.
 - Provider-agnostic LLM configuration through environment variables.
@@ -82,10 +82,10 @@ Diagram and implementation docs:
 
 ### Setup (env vars)
 
-From this folder (`examples/developer-experience/protegrity-ai-llm`):
+From this folder (`examples/ai-chat/protegrity-ai-llm`):
 
 ```bash
-cp .env.example app/backend/.env
+cp app/backend/.env.example app/backend/.env
 ```
 
 Then fill provider credentials in `app/backend/.env`.

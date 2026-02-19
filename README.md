@@ -75,6 +75,9 @@ Protegrity AI Developer Edition provides the files required and also the source 
 │   └── sample-classification-python-tabular.py
 ├── semantic-guardrail/                  # GenAI security risk & PII multi-turn scanning examples
 │   └── sample-guardrail-python.py
+├── examples/                            # End-to-end reference applications
+│   └── ai-chat/
+│       └── protegrity-ai-llm/           # Secure chat full-stack example
 └── samples/                             # High-level SDK samples (Python & Java)
     ├── python/
     │   ├── sample-app-protect-unprotect/    # Protect / Unprotect Jupyter Notebook samples

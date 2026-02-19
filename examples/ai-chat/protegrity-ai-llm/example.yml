@@ -1,6 +1,6 @@
 name: "Protegrity AI (LLM)"
 slug: "protegrity-ai-llm"
-industry: "developer-experience"
+industry: "ai-chat"
 owner: "Dan Johnson"
 difficulty: "intermediate"
 runtime: ["docker", "local"]
