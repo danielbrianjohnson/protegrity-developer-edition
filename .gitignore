@@ -86,3 +86,4 @@ target/
 out/
 
 db.sqlite3
+.env
