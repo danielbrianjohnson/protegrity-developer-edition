@@ -4,6 +4,37 @@
 
 This example provides a secure, full-stack LLM chatbot that scans user prompts and model responses for sensitive data, applies guardrail checks, and enforces privacy controls before content is returned to users.
 
+## Demo video
+
+Here is the fastest way to understand the app flow before you run it locally:
+
+- https://www.youtube.com/watch?v=DcSQH0ZOf3E
+
+## Quickstart (3 steps)
+
+1. **Set environment file**
+	```bash
+	cp .env.example app/backend/.env
+	```
+	Then fill provider credentials in `app/backend/.env`.
+
+2. **Run the app**
+	```bash
+	cd app
+	./run.sh
+	```
+
+3. **Open and try it**
+	- Frontend: http://localhost:5173
+	- Backend: http://127.0.0.1:8000
+	- Send a normal prompt, then a fake-PII prompt, then a policy-violating prompt.
+
+## Expected result
+
+- Normal prompt: assistant responds normally.
+- Fake PII prompt: sensitive values are sanitized/redacted in processing.
+- Policy-violating prompt: content is blocked or safely handled by guardrails.
+
 ## Use case
 
 Developer and platform teams need a production-style reference for building GenAI chat experiences that protect sensitive data while keeping app setup fast and repeatable.
@@ -39,7 +70,7 @@ Developer and platform teams need a production-style reference for building GenA
 Diagram and implementation docs:
 
 - `docs/architecture.md`
-- `docs/documentation/OVERVIEW.md`
+- `docs/protegrity-integration.md`
 
 ## Getting started
 
