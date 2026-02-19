@@ -97,6 +97,23 @@ class Command(BaseCommand):
                 'display_order': 3,
                 'configuration': {}
             },
+            {
+                'id': 'anthropic-claude-3-5-sonnet',
+                'name': 'Claude 3.5 Sonnet (Anthropic)',
+                'provider_type': 'anthropic',
+                'description': 'Anthropic Claude 3.5 Sonnet (direct API)',
+                'model_identifier': 'claude-3-5-sonnet-latest',
+                'is_active': False,
+                'requires_polling': False,
+                'max_tokens': 8192,
+                'supports_streaming': False,
+                'cost_per_1k_input_tokens': 0.003,
+                'cost_per_1k_output_tokens': 0.015,
+                'display_order': 4,
+                'configuration': {
+                    'temperature': 0.7
+                }
+            },
             # Azure OpenAI Models
             {
                 'id': 'azure-dalle3',

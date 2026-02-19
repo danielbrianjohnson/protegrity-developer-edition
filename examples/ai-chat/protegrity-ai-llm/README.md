@@ -44,7 +44,7 @@ Developer and platform teams need a production-style reference for building GenA
 - Industry-first sample packaging under `examples/ai-chat`.
 - Protegrity data discovery and redaction integrated in chat workflow.
 - Semantic guardrails applied before and after LLM interaction.
-- Provider-agnostic LLM configuration through environment variables.
+- Provider-agnostic LLM configuration through environment variables (Azure OpenAI, OpenAI, Anthropic, Bedrock).
 
 ## Features showcased
 

@@ -18,6 +18,9 @@ Future providers (when credentials available):
 
 from abc import ABC, abstractmethod
 from types import SimpleNamespace
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ProviderResult:
@@ -246,8 +249,12 @@ def get_provider(llm_provider):
     
     # Azure OpenAI provider (active)
     if provider_type == "azure":
-        from .providers_azure import AzureOpenAIProvider
-        return AzureOpenAIProvider(llm_provider)
+        try:
+            from .providers_azure import AzureOpenAIProvider
+            return AzureOpenAIProvider(llm_provider)
+        except Exception as exc:
+            logger.warning("Falling back to DummyProvider for azure due to initialization error: %s", exc)
+            return DummyProvider(llm_provider)
     
     # Extend provider mappings here when adding additional providers.
     # 
@@ -255,17 +262,29 @@ def get_provider(llm_provider):
     #     from .providers_fin import FinAIProvider
     #     return FinAIProvider(llm_provider)
     # 
-    # if provider_type == "bedrock":
-    #     from .providers_bedrock import BedrockClaudeProvider
-    #     return BedrockClaudeProvider(llm_provider)
+    if provider_type == "bedrock":
+        try:
+            from .providers_bedrock import BedrockClaudeProvider
+            return BedrockClaudeProvider(llm_provider)
+        except Exception as exc:
+            logger.warning("Falling back to DummyProvider for bedrock due to initialization error: %s", exc)
+            return DummyProvider(llm_provider)
     # 
-    # if provider_type == "openai":
-    #     from .providers_openai import OpenAIProvider
-    #     return OpenAIProvider(llm_provider)
-    # 
-    # if provider_type == "anthropic":
-    #     from .providers_anthropic import AnthropicProvider
-    #     return AnthropicProvider(llm_provider)
+    if provider_type == "openai":
+        try:
+            from .providers_openai import OpenAIProvider
+            return OpenAIProvider(llm_provider)
+        except Exception as exc:
+            logger.warning("Falling back to DummyProvider for openai due to initialization error: %s", exc)
+            return DummyProvider(llm_provider)
+
+    if provider_type == "anthropic":
+        try:
+            from .providers_anthropic import AnthropicProvider
+            return AnthropicProvider(llm_provider)
+        except Exception as exc:
+            logger.warning("Falling back to DummyProvider for anthropic due to initialization error: %s", exc)
+            return DummyProvider(llm_provider)
     
     # Default to DummyProvider for all providers (development mode)
     return DummyProvider(llm_provider)

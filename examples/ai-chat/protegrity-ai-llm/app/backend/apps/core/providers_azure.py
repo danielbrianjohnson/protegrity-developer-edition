@@ -19,6 +19,7 @@ Environment Variables Required:
 
 import os
 import logging
+import json
 from openai import AzureOpenAI
 from openai import OpenAIError, APIError, RateLimitError, APITimeoutError
 from .providers import BaseLLMProvider, ProviderResult
@@ -135,9 +136,11 @@ class AzureOpenAIProvider(BaseLLMProvider):
         tool_definitions = []
         for tool in tools:
             # Convert tool's function_schema to OpenAI format
+            function_schema = dict(tool.function_schema or {})
+            function_schema["name"] = tool.id
             tool_definitions.append({
                 "type": "function",
-                "function": tool.function_schema
+                "function": function_schema
             })
         
         return tool_definitions if tool_definitions else None
@@ -157,9 +160,16 @@ class AzureOpenAIProvider(BaseLLMProvider):
         
         tool_calls = []
         for tool_call in response_message.tool_calls:
+            raw_args = tool_call.function.arguments or "{}"
+            try:
+                parsed_args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
+            except json.JSONDecodeError:
+                logger.warning(f"Failed to parse Azure tool args JSON for call_id={tool_call.id}")
+                parsed_args = {}
+
             tool_calls.append({
                 "tool_name": tool_call.function.name,
-                "arguments": tool_call.function.arguments,  # JSON string
+                "arguments": parsed_args,
                 "call_id": tool_call.id,
             })
         
